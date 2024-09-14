@@ -32,12 +32,12 @@ router.get("/", async (req, res) => {
     const page = (Number(req.query.page) || 1) - 1;  
 
     data = await proudect.find({
-       "data.brand":{ $regex: "" },
-      "data.product_name":{ $regex: "" },
-       "data.model_number":{ $regex: "" },
-        "data.condition"  :{$regex:"" } ,
-      "data.material_Category":{ $regex: ""},        
-       "data.Category":{ $regex: "" },
+       "data.brand":{ $regex: Brand },
+      "data.product_name":{ $regex: search },
+       "data.model_number":{ $regex: ModelNumber },
+        "data.condition"  :{$regex:Condition} ,
+      "data.material_Category":{ $regex:materialCategory},        
+       "data.Category":{ $regex: Category },
     }).skip(page * limit)
     .limit(limit)
     .toArray();
