@@ -26,7 +26,7 @@ router.get("/:id", async (req, res) => {
   user = db.collection("user")
 
   try {
-    x = await user.find({ "_id": new ObjectId(req.params.id) })
+    x = await user.findOne({ "_id": new ObjectId(req.params.id) })
 
     res.status(200).json({ data: x })
   } catch (err) {
