@@ -31,8 +31,11 @@ router.get("/", async (req, res) => {
     const limit = Number(req.query.limit)|| 10
     const page = (Number(req.query.page) || 1) - 1;  
 
+  
+
+
     data = await proudect.find({
-       "data.brand":{ $regex: Brand },
+      "data.brand":{ $regex: Brand },
       "data.product_name":{ $regex: search },
        "data.model_number":{ $regex: ModelNumber },
         "data.condition"  :{$regex:Condition} ,
