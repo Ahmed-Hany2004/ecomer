@@ -34,14 +34,7 @@ router.get("/", async (req, res) => {
   
 
 
-    data = await proudect.find({
-      "data.brand":{ $regex: Brand },
-      "data.product_name":{ $regex: search },
-       "data.model_number":{ $regex: ModelNumber },
-        "data.condition"  :{$regex:Condition} ,
-      "data.material_Category":{ $regex:materialCategory},        
-       "data.Category":{ $regex: Category },
-    }).skip(page * limit)
+    data = await proudect.find({ }).skip(page * limit)
     .limit(limit)
     .toArray();
 
