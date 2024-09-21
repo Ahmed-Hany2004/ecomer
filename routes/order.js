@@ -105,7 +105,7 @@ router.post("/", async (req, res) => {
 
     try {
 
-        if (req.user.isAdmin) {
+      
 
 
             await order.insertOne({
@@ -128,10 +128,7 @@ router.post("/", async (req, res) => {
            }})
 
             res.status(200).json("order insertd")
-        }
-        else {
-            res.status(400).json("you are not allow ")
-        }
+     
     }
     catch (err) {
         console.log("=========>" + err);
