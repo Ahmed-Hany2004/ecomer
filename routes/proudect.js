@@ -20,27 +20,73 @@ router.get("/", async (req, res) => {
 
 
   try {
-    const search = req.query.search || ""
-    const ModelNumber = req.query.ModelNumber|| ""
-    const Condition = req.query.Condition|| ""
-    const Brand = req.query.Brand|| ""
-    const Category = req.query.Category|| ""
-    const materialCategory = req.query.materialCategory|| ""
-    const min = Number(req.query.min)|| 0
-    const max = Number(req.query.limit)|| 10000000000000000000000
-    const limit = Number(req.query.limit)|| 10
-    const page = (Number(req.query.page) || 1) - 1;  
+     search = req.query.search || null
+     ModelNumber = req.query.ModelNumber|| null
+     Condition = req.query.Condition|| null
+     Brand = req.query.Brand|| null
+     Category = req.query.Category|| null
+     materialCategory = req.query.materialCategory|| null
+     min = Number(req.query.min)|| 0
+     max = Number(req.query.max)|| 10000000000000000000000
+     limit = Number(req.query.limit)|| 10
+     page = (Number(req.query.page) || 1) - 1;  
+
+     filter = {
+
+     }
+
+     if (search) {
+      filter["data.product_name"] = { $regex:search }; 
+    }
+
+    if (ModelNumber) {
+ 
+      ModelNumber = ModelNumber.split(',')
+
+      filter["data.model_number"] = { $in: ModelNumber };
+    }
 
 
-    
+  if (Condition) {
+ 
+    Condition = Condition.split(',')
+
+      filter["data.condition"] = { $in: Condition };
+    }
+
+    if (Brand) {
+ 
+      Brand = Brand.split(',')
   
+        filter["data.brand"]= { $in: Brand };
+      }
 
+      if (Category) {
+ 
+        Category = Category.split(',')
+    
+          filter["data.Category"] = { $in: Category };
+        }
 
-    data = await proudect.find({ }).skip(page * limit)
+        if (materialCategory) {
+ 
+          materialCategory = materialCategory.split(',')
+      
+            filter["data.material_Category"] = { $in: materialCategory };
+          }
+          
+           filter.price = { $gte: min, $lte: max };
+
+    full_data = await proudect.find( filter ).skip(page * limit)
     .limit(limit)
     .toArray();
 
-    res.status(200).json({data:data})
+    res.status(200).json({
+      full_data :full_data ,
+      page:page+1,
+      limit:limit
+
+    })
   }
   catch (err) {
     console.log("=========>" + err);
