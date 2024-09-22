@@ -126,7 +126,7 @@ router.post("/", async (req, res) => {
         test = await userorders.findOne({"_id":new ObjectId(req.body.Customer)})
 
         if(test){
-         await userorders.updateOne({"_id":new ObjectId(req.body.Customer)},{"lastOrder":Date.now()})
+         await userorders.updateOne({"Customer":new ObjectId(req.body.Customer)},{"lastOrder":Date.now()})
         }
         else{
          await userorders.insertOne({
