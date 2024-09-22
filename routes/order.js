@@ -275,7 +275,7 @@ try{
                   as: "usersorder"
                },
             },
-            { $sort : { lastOrder : 1 } }
+            { $sort : { lastOrder : -1 } }
    
          ]).toArray()
 
