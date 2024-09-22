@@ -123,9 +123,17 @@ router.post("/", async (req, res) => {
                 "cart": req.body.cart
             })
 
-           await userorders.updateOne({"_id":new ObjectId("66e4b06454a149b717ea4a2f")},{$addToSet:{
-          "users":new ObjectId(req.body.Customer)
-           }})
+        test = await userorders.findOne({"_id":new ObjectId(req.body.Customer)})
+
+        if(test){
+         await userorders.updateOne({"_id":new ObjectId(req.body.Customer)},{"lastOrder":Date.now()})
+        }
+        else{
+         await userorders.insertOne({
+            "Customer":new ObjectId(req.body.Customer),
+           "lastOrder":Date.now()
+         })
+        }
 
             res.status(200).json("order insertd")
      
@@ -262,13 +270,12 @@ try{
                $lookup:
                {
                   from: "user",
-                  localField: "users",
+                  localField: "Customer",
                   foreignField: "_id",
                   as: "usersorder"
                },
             },
-
-   
+            { $sort : { lastOrder : 1 } }
    
          ]).toArray()
 
