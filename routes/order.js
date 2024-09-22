@@ -135,7 +135,7 @@ router.post("/", async (req, res) => {
          })
         }
 
-            res.status(200).json("order insertd")
+            res.status(200).json({x:"order insertd",test:test})
      
     }
     catch (err) {
