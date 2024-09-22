@@ -74,8 +74,12 @@ router.get("/", async (req, res) => {
       
             filter["data.material_Category"] = { $in: materialCategory };
           }
-          
-           filter.price = { $gte: min, $lte: max };
+           
+          if(min && max){
+
+            filter.price = { $gte: min, $lte: max };
+          }
+           
 
     full_data = await proudect.find( filter ).skip(page * limit)
     .limit(limit)
