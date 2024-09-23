@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
           }
            
 
-    full_data = await proudect.find( filter ).skip(page * limit)
+    data = await proudect.find( filter ).skip(page * limit)
     .limit(limit)
     .toArray();
 
