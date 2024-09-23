@@ -82,22 +82,24 @@ router.get("/", async (req, res) => {
            
 
     full_data = await proudect.find( filter )
-    .skip(page * limit)
-    .limit(limit)
     .toArray();
 
     f = full_data.length
+
+    
 
     last_page =  Math.ceil(f/limit)
 
 data = full_data.slice(page * limit,(page * limit)+limit)
 
     res.status(200).json(
-      {data :data,},{meta:{
+      {data :{data},meta:{
         page:page+1,
       limit:limit,
       last_page:last_page
-      }})
+      }
+    },
+      )
   }
   catch (err) {
     console.log("=========>" + err);
