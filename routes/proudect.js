@@ -86,7 +86,7 @@ router.get("/", async (req, res) => {
     .toArray();
 
     res.status(200).json({
-      full_data :full_data ,
+      data :data ,
       page:page+1,
       limit:limit
 
