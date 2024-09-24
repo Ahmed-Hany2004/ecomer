@@ -90,7 +90,7 @@ router.post("/login", async (req, res) => {
 
     if(!test){
 
-      return  res.status(200).json("invalid Email or Password")
+      return  res.status(400).json("invalid Email or Password")
     }
 
 
