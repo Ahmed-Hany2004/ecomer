@@ -116,6 +116,47 @@ router.post("/login", async (req, res) => {
 })
 
 
+router.post("/login/admin", async (req, res) => {
+
+
+  user = db.collection("user")
+
+
+  try {
+   
+    test = await user.findOne({"Email":req.body.Email})
+
+
+    if(!test){
+
+      return  res.status(400).json("invalid Email or Password")
+    }
+
+
+    if(!test.isAdmin){
+
+      return  res.status(400).json("yor are not allaowed")
+    }
+    const isPasswordmatch = await bcrypt.compare(req.body.password,test.password)
+
+    if(!isPasswordmatch){
+
+      return  res.status(200).json("yor are not allaowed")
+    }
+
+    const token = jwt.sign({ id: test._id, isAdmin: test.isAdmin }, process.env.secritkey);
+
+    delete test.isAdmin
+    delete test.password
+    res.status(200).json({ message: "Sign in Succeed", test, token })
+
+
+  }
+  catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+})
 
 
 router.delete("/:id",async(req,res)=>{

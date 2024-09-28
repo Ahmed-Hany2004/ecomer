@@ -188,10 +188,7 @@ if(req.body.status != 'Approved')
             res.status(200).json("order updated")        
 
     }
-    else if (req.body.status == 'Approved'){
 
-
-    }
     
     }
     else {
