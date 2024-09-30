@@ -69,7 +69,7 @@ router.get("/", async (req, res) => {
 
     if (Brand) {
  
-      Condition = Condition.split(',')
+      Brand = Brand.split(',')
   
         filter["data.brand"]= { $in: Brand };
       }
