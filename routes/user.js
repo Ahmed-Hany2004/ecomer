@@ -98,7 +98,7 @@ router.post("/login", async (req, res) => {
 
     if(!isPasswordmatch){
 
-      return  res.status(200).json("invalid Email or Password")
+      return  res.status(400).json("invalid Email or Password")
     }
 
     const token = jwt.sign({ id: test._id, isAdmin: test.isAdmin }, process.env.secritkey);
@@ -141,7 +141,7 @@ router.post("/login/admin", async (req, res) => {
 
     if(!isPasswordmatch){
 
-      return  res.status(200).json("yor are not allaowed")
+      return  res.status(400).json("yor are not allaowed")
     }
 
     const token = jwt.sign({ id: test._id, isAdmin: test.isAdmin }, process.env.secritkey);

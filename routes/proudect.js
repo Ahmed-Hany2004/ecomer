@@ -36,8 +36,21 @@ router.get("/", async (req, res) => {
      }
 
      if (search) {
-      filter["data.product_name"] = { $regex:search }; 
+      
+     
+   filter = {
+       $or: [
+         {"data.product_name":{ $regex: search, $options: "i"} },
+            {"data.brand":{$regex: search, $options: "i" } },
+            {"data.model_number":{$regex: search, $options: "i" } },
+            {"data.condition":{$regex: search, $options: "i" } },
+            {"data.category":{$regex: search, $options: "i" } },
+            {"data.material_Category":{$regex: search, $options: "i" } },
+         ]} 
+     
+     
     }
+
 
     if (ModelNumber) {
  
@@ -56,7 +69,7 @@ router.get("/", async (req, res) => {
 
     if (Brand) {
  
-      Brand = Brand.split(',')
+      Condition = Condition.split(',')
   
         filter["data.brand"]= { $in: Brand };
       }
@@ -65,7 +78,7 @@ router.get("/", async (req, res) => {
  
         Category = Category.split(',')
     
-          filter["data.Category"] = { $in: Category };
+          filter["data.category"] = { $in: Category };
         }
 
         if (materialCategory) {
