@@ -3,7 +3,7 @@ const { db } = require("../connection");
 const { ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const { cloud_uplod, cloud_remove, cloud_Multiple_uplod } = require("../cloud")
-const { upload } = require("../multerfunction")
+const { upload,uploadpdf } = require("../multerfunction")
 const path = require("path")
 const fs = require("fs");
 const { date } = require("joi");
@@ -140,7 +140,7 @@ router.get("/:id", async (req, res) => {
 
 })
 
-router.post("/", async (req, res) => {
+router.post("/",uploadpdf.single("pdf"), async (req, res) => {
 
   proudect = db.collection("proudect");
 
@@ -160,6 +160,8 @@ router.post("/", async (req, res) => {
   try {
 
     if (req.user.isAdmin == true) {
+
+      if(!req.file){
       x = await proudect.insertOne({
         "data": newproudact,
         "mainImg": {
@@ -168,9 +170,40 @@ router.post("/", async (req, res) => {
           "originalname": null,
         },
         "imgs": [],
+        "pdf":
+        {"url": null,
+          "publicid": null,
+          }
       })
 
       return res.status(200).json({ "message": "proudect inserted", "data": x })
+    }
+
+    if(req.file){
+      const pathimge = path.join(__dirname, "../upload/" + req.file.originalname)
+
+    result = await cloud_uplod(pathimge)
+
+    x = await proudect.insertOne({
+      "data": newproudact,
+      "mainImg": {
+        "url": null,
+        "publicid": null,
+        "originalname": null,
+      },
+      "imgs": [],
+      "pdf":
+      {
+        "url": result.secure_url,
+            "publicid": result.public_id,
+            }
+    })
+
+
+    fs.unlinkSync(pathimge)
+
+      res.status(200).json({ "message": "proudect inserted", "data": x })
+    }
     }
     else {
       return res.status(403).json({ message: "yor are not allaowed" })
@@ -360,6 +393,65 @@ router.put("/pull/imgs/:id", async (req, res) => {
     console.log("=========>" + err);
     res.status(500).send("err in " + err)
   }
+})
+
+
+router.put("/put/pdf/:id",  uploadpdf.single("pdf"),  async (req, res) =>{
+  proudect = db.collection("proudect");
+
+  token = req.headers.token;
+  req.user = null;
+
+  if (token) {
+
+    const data = jwt.verify(token, process.env.secritkey)
+    req.user = data;
+
+  } else {
+    return res.status(401).json({ message: "invalid token" })
+  }
+
+  try{
+
+    if (req.user.isAdmin) {
+
+      if (!req.file) {
+        return res.status(403).json({ message: "you not send pdf" })
+      }
+
+      const pathimge = path.join(__dirname, "../upload/" + req.file.originalname)
+
+      test = await proudect.findOne({ "_id": new ObjectId(req.params.id) })
+
+
+      if (test.pdf.publicid !== null) {
+        cloud_remove(test.pdf.publicid)
+
+      }
+
+      await proudect.updateOne({ "_id": new ObjectId(req.params.id) }, {
+        $set: {
+          "pdf": {
+            "url": result.secure_url,
+            "publicid": result.public_id
+          }
+        }
+      })
+
+      fs.unlinkSync(pathimge)
+      res.status(200).json({ message: "upload pdf Succeed", })
+
+    }
+    else {
+      res.status(400).json("you are not allow ")
+    }
+
+  }
+  catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+
 })
 
 
@@ -583,5 +675,7 @@ router.delete("/delete/:qere/:id", async (req, res) => {
   }
 
 })
+
+
 
 module.exports = router;
