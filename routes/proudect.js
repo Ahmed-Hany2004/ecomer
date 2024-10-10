@@ -423,6 +423,8 @@ router.put("/put/pdf/:id",  uploadpdf.single("pdf"),  async (req, res) =>{
 
       test = await proudect.findOne({ "_id": new ObjectId(req.params.id) })
 
+      result = await cloud_uplod(pathimge)
+
 
       if (test.pdf.publicid !== null) {
         cloud_remove(test.pdf.publicid)
