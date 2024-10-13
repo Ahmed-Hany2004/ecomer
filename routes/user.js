@@ -3,8 +3,40 @@ const { db } = require("../connection");
 const { ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs")
+const nodemailer = require('nodemailer');
 
 const router = express.Router()
+
+
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS
+  }
+});
+
+
+
+
+function sendVerificationEmail(userEmail, userName, verificationCode) {
+  const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: userEmail,
+      subject: 'رمز التحقق من التسجيل',
+      text: `مرحبًا ${userName}، شكرًا لتسجيلك في موقعنا! رمز التحقق الخاص بك هو: ${verificationCode}`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+          console.log('Error sending email:', error);
+      } else {
+          console.log('Email sent:', info.response);
+      }
+  });
+}
+
 
 router.get("/", async (req, res) => {
 
@@ -37,6 +69,12 @@ router.get("/:id", async (req, res) => {
 })
 
 
+function generateRandomKey() {
+  const min = 1000; // minimum 4-digit number
+  const max = 9999; // maximum 4-digit number
+  return `${Math.floor(Math.random() * (max - min + 1)) + min}`;
+}
+
 
 
 router.post("/", async (req, res) => {
@@ -54,6 +92,8 @@ router.post("/", async (req, res) => {
     var salt = await bcrypt.genSaltSync(10);
     req.body.password = await bcrypt.hash(req.body.password, salt)
 
+    const otp = generateRandomKey();
+    // const otp =`${Math.floor(Math.random()*9000)}`
 
     await user.insertOne({
       "contactName": req.body.contactName,
@@ -63,13 +103,50 @@ router.post("/", async (req, res) => {
       "phoneNumber": req.body.phoneNumber,
       "country": req.body.country,
       "password": req.body.password,
-      "isAdmin":false
+      "isAdmin":false,
+      "isVerified": false,
+      "otp":otp 
     })
+
+
+    sendVerificationEmail(req.body.Email,req.body.contactName,otp)
+
 
     res.status(200).json("user inserted ")
 
 
   } catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+})
+
+
+router.post("/verify",async(req,res)=>{
+
+  user = db.collection("user")
+
+  try{
+
+ x = await user.findOne({"Email": req.body.Email ,"otp":req.body.otp})
+ 
+
+ 
+
+ if(!x){
+  return res.status(400).json({ message: 'The verification code is incorrect or the email does not exist.' });
+ }
+
+await user.updateOne({"Email": req.body.Email},
+  {
+$set:{
+  "isVerified":true
+},$unset: { "otp": "" }
+})
+
+ res.status(200).json("done")
+  }
+  catch (err) {
     console.log("=========>" + err);
     res.status(500).send("err in " + err)
   }
@@ -88,11 +165,19 @@ router.post("/login", async (req, res) => {
     test = await user.findOne({"Email":req.body.Email})
 
 
+
     if(!test){
 
       return  res.status(400).json("invalid Email or Password")
     }
 
+    if(test.isVerified==false){
+
+      return  res.status(400).json({"M":"This email is not activated ",
+        "isVerified":false
+      })
+
+    }
 
     const isPasswordmatch = await bcrypt.compare(req.body.password,test.password)
 
@@ -158,6 +243,115 @@ router.post("/login/admin", async (req, res) => {
   }
 })
 
+
+router.post("/restpassword",async(req,res)=>{
+
+  user = db.collection("user")
+
+  try{
+
+    x = await user.findOne({"Email": req.body.Email })
+
+    if(!x){ 
+
+      return res.status(400).json("cant find this Email") 
+    }
+
+    const otp = generateRandomKey();
+
+    req.body.contactName  = x.Email;
+
+    sendVerificationEmail(req.body.Email,req.body.contactName,otp)
+
+    await user.updateOne({"Email": req.body.Email},{
+      $set:{
+     "otp":otp
+      }
+    })
+
+    res.status(200).json("Email send ")
+
+  }
+
+  catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+})
+
+
+router.post("/changepassword",async(req,res)=>{
+
+  user = db.collection("user")
+
+  try{
+
+    x = await user.findOne({"Email": req.body.Email,"otp":req.body.otp })
+
+    if(!x){ 
+
+      return res.status(400).json("cant find this Email") 
+    }
+
+   
+    var salt = await bcrypt.genSaltSync(10);
+    req.body.password = await bcrypt.hash(req.body.password, salt)
+
+
+
+    await user.updateOne({"Email": req.body.Email},{
+      $set:{
+     "password":req.body.password
+      },$unset: { "otp": "" }
+    })
+
+    res.status(200).json("done")
+
+  }
+
+  catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+})
+
+
+router.post("/resend",async(req,res)=>{
+
+  user = db.collection("user")
+  try{
+
+    x = await user.findOne({"Email": req.body.Email,})
+
+    if(!x){ 
+
+      return res.status(400).json("cant find this Email") 
+    }
+
+
+    const otp = generateRandomKey();
+
+    req.body.contactName  = x.Email;
+
+    sendVerificationEmail(req.body.Email,req.body.contactName,otp)
+
+    await user.updateOne({"Email": req.body.Email},{
+      $set:{
+     "otp":otp
+      }
+    })
+
+    res.status(200).json("Email send")
+
+
+  }
+
+  catch (err) {
+    console.log("=========>" + err);
+    res.status(500).send("err in " + err)
+  }
+
+})
 
 router.delete("/:id",async(req,res)=>{
 

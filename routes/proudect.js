@@ -1,12 +1,14 @@
 const express = require("express");
-const { db } = require("../connection");
+const { db,gridFSBucket } = require("../connection");
 const { ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const { cloud_uplod, cloud_remove, cloud_Multiple_uplod } = require("../cloud")
-const { upload,uploadpdf } = require("../multerfunction")
+const { upload,uploadpdf,uploadnewpdf } = require("../multerfunction")
 const path = require("path")
 const fs = require("fs");
+const cloudinary =require("cloudinary");
 const { date } = require("joi");
+const crypto =  require("crypto")
 
 
 
@@ -140,7 +142,7 @@ router.get("/:id", async (req, res) => {
 
 })
 
-router.post("/",uploadpdf.single("pdf"), async (req, res) => {
+router.post("/", async (req, res) => {
 
   proudect = db.collection("proudect");
 
@@ -161,7 +163,7 @@ router.post("/",uploadpdf.single("pdf"), async (req, res) => {
 
     if (req.user.isAdmin == true) {
 
-      if(!req.file){
+      
       x = await proudect.insertOne({
         "data": newproudact,
         "mainImg": {
@@ -176,34 +178,23 @@ router.post("/",uploadpdf.single("pdf"), async (req, res) => {
           }
       })
 
-      return res.status(200).json({ "message": "proudect inserted", "data": x })
-    }
+       res.status(200).json({ "message": "proudect inserted", "data": x })
+    
 
-    if(req.file){
       const pathimge = path.join(__dirname, "../upload/" + req.file.originalname)
 
     result = await cloud_uplod(pathimge)
 
-    x = await proudect.insertOne({
-      "data": newproudact,
-      "mainImg": {
-        "url": null,
-        "publicid": null,
-        "originalname": null,
-      },
-      "imgs": [],
-      "pdf":
-      {
-        "url": result.secure_url,
-            "publicid": result.public_id,
-            }
-    })
+   
+
+
+   
 
 
     fs.unlinkSync(pathimge)
 
       res.status(200).json({ "message": "proudect inserted", "data": x })
-    }
+    
     }
     else {
       return res.status(403).json({ message: "yor are not allaowed" })
@@ -216,6 +207,84 @@ router.post("/",uploadpdf.single("pdf"), async (req, res) => {
 
 
 })
+
+
+router.post('/upload/:id', uploadnewpdf.single('file'), (req, res) => {
+
+  proudect = db.collection("proudect");
+
+  if (!req.file) {
+    return res.status(400).send('No file uploaded');
+  }
+
+  crypto.randomBytes(16, (err, buf) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error generating file name' });
+    }
+
+    const filename = buf.toString('hex') + path.extname(req.file.originalname);
+    const uploadStream = gridFSBucket.openUploadStream(filename, {
+      contentType: req.file.mimetype,
+    });
+
+    uploadStream.end(req.file.buffer);
+
+
+
+    uploadStream.on('finish', (file) => {
+
+    proudect.updateOne({"_id":new ObjectId(req.params.id)},{$set:{
+      "data.pdf":file._id
+    }})
+
+      res.json({ file });
+    });
+
+    uploadStream.on('error', (error) => {
+      res.status(500).json({ error: 'Error uploading file' });
+    });
+  });
+});
+
+
+router.get('/files/:id',async (req, res) => {
+  try {
+      fileId = new ObjectId(req.params.id);
+      
+      const filesCollection = db.collection('uploads.files');
+      // Find the file by its _id using async/await
+      const file = await filesCollection.findOne({ _id: fileId });
+  
+      if (!file) {
+        return res.status(404).json({ error: 'No file found' });
+      }
+  
+      const chunksCollection = db.collection('uploads.chunks');
+      const chunks = await chunksCollection
+        .find({ files_id: fileId })
+        .sort({ n: 1 }) // Sort by the chunk order
+        .toArray();
+  
+      if (!chunks || chunks.length === 0) {
+        return res.status(404).json({ error: 'No chunks found for this file' });
+      }
+  
+      const fileData = Buffer.concat(chunks.map(chunk => chunk.data.buffer));
+  
+      // Convert the binary data to a Base64 string
+      const base64File = fileData.toString('base64');
+  
+      // Return the Base64 string along with the content type and filename
+      res.json({
+        fileName: file.filename,
+        contentType: file.contentType,
+        data: base64File,
+      });
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({ error: 'Invalid file ID' });
+    }
+});
 
 
 router.post("/update/mainimg/:id", upload.single("main_img"), async (req, res) => {

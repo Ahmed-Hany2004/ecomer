@@ -131,7 +131,8 @@ router.post("/", async (req, res) => {
         else{
          await userorders.insertOne({
             "Customer":new ObjectId(req.body.Customer),
-           "lastOrder":Date.now()
+           "lastOrder":Date.now(),
+           "Status": null,
          })
         }
 
@@ -400,9 +401,18 @@ router.post("/user/create", async (req, res) => {
       })
       
       
-      await userorders.updateOne({"_id":new ObjectId("66e4b06454a149b717ea4a2f")},{$addToSet:{
-         "users":new ObjectId(x.insertedId)
-      }})
+      x = await userorders.findOne({"Customer":new ObjectId(x.insertedId)})
+
+      if(x){
+       await userorders.updateOne({"Customer":new ObjectId(x.insertedId)},{$set:{"lastOrder":Date.now()}})
+      }
+      else{
+       await userorders.insertOne({
+          "Customer":new ObjectId(x.insertedId),
+         "lastOrder":Date.now(),
+         "Status": null,
+       })
+      }
   
       res.status(200).json( {data :x })
   
@@ -411,6 +421,38 @@ router.post("/user/create", async (req, res) => {
       console.log("=========>" + err);
       res.status(500).send("err in " + err)
     }
+  })
+
+
+  router.post("/update/Status/:id",async(req,res)=>{
+
+    userorders = db.collection("userorders")
+
+    x = await userorders.findOne({"_id":new ObjectId(req.params,id)})
+
+
+    if(!x){
+    
+        return  res.status(400).json("cant find this user")
+    }
+    
+    await userorders.updateOne({"_id":new ObjectId(req.params,id)},{$set:{"Status":req.body.Status}})
+
+    
+  res.status(200).json("Status updated")
+
+  })
+
+
+
+  router.delete("/userorders/:id",async(req,res)=>{
+
+    userorders = db.collection("userorders")
+
+   userorders.deleteOne({"_id":new ObjectId(req.params.id)})
+
+   res.status(200).json("user deleted")
+
   })
 
 module.exports = router;

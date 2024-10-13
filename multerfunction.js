@@ -29,10 +29,10 @@ const storage = multer.diskStorage({
   const uploadpdf = multer
   ({ storage: storage, 
     fileFilter: (req, file, cb) => {
-      const filetypes = /pdf/; // filetypes you will accept
-      const mimetype = filetypes.test(file.mimetype); // verify file is == filetypes you will accept
+      const filetypes = /pdf/; 
+      const mimetype = filetypes.test(file.mimetype); 
    
-      // if mimetype && extname are true, then no error
+      
       if(mimetype ){
           return cb(null, true);
       }
@@ -46,9 +46,15 @@ const storage = multer.diskStorage({
         }
     }
   })
+
+
+
+  const storage2 = multer.memoryStorage();
+  const uploadnewpdf = multer({ storage2 });
   
  
   module.exports=  {
     upload,
     uploadpdf,
+    uploadnewpdf,
   };
