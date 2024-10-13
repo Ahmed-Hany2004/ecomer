@@ -431,7 +431,7 @@ router.post("/user/create", async (req, res) => {
 
     userorders = db.collection("userorders")
 
-    x = await userorders.findOne({"_id":new ObjectId(req.params,id)})
+    x = await userorders.findOne({"_id":new ObjectId(req.params.id)})
 
 
     if(!x){
@@ -439,7 +439,7 @@ router.post("/user/create", async (req, res) => {
         return  res.status(400).json("cant find this user")
     }
     
-    await userorders.updateOne({"_id":new ObjectId(req.params,id)},{$set:{"Status":req.body.Status}})
+    await userorders.updateOne({"_id":new ObjectId(req.params.id)},{$set:{"Status":req.body.Status}})
 
     
   res.status(200).json("Status updated")
