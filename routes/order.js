@@ -382,9 +382,9 @@ router.post("/user/create", async (req, res) => {
   
     try {
   
-      x = await user.findOne({ "Email": req.body.Email })
+      test = await user.findOne({ "Email": req.body.Email })
   
-      if (x) {
+      if (test) {
         res.status(200).json("This email is already used")
         return
       }
@@ -399,11 +399,14 @@ router.post("/user/create", async (req, res) => {
         "country": req.body.country,
         "isAdmin":false
       })
-      
-      
-      x = await userorders.findOne({"Customer":new ObjectId(x.insertedId)})
 
-      if(x){
+   
+      
+      
+      
+      v= await userorders.findOne({"Customer":new ObjectId(x.insertedId)})
+
+      if(v){
        await userorders.updateOne({"Customer":new ObjectId(x.insertedId)},{$set:{"lastOrder":Date.now()}})
       }
       else{
@@ -424,7 +427,7 @@ router.post("/user/create", async (req, res) => {
   })
 
 
-  router.post("/update/Status/:id",async(req,res)=>{
+  router.post("/update/status/:id",async(req,res)=>{
 
     userorders = db.collection("userorders")
 
