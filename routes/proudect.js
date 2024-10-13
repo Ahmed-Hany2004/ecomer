@@ -172,28 +172,11 @@ router.post("/", async (req, res) => {
           "originalname": null,
         },
         "imgs": [],
-        "pdf":
-        {"url": null,
-          "publicid": null,
-          }
+        "pdf":null
       })
 
        res.status(200).json({ "message": "proudect inserted", "data": x })
     
-
-      const pathimge = path.join(__dirname, "../upload/" + req.file.originalname)
-
-    result = await cloud_uplod(pathimge)
-
-   
-
-
-   
-
-
-    fs.unlinkSync(pathimge)
-
-      res.status(200).json({ "message": "proudect inserted", "data": x })
     
     }
     else {
