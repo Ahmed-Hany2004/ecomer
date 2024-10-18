@@ -28,20 +28,20 @@ app.use("/proudect",proudectpath)
 app.use("/order",order)
 
 
-app.get("/",async(req,res)=>{
- const   user = db.collection("user")
- const  proudect = db.collection("proudect")
- const   order = db.collection("order")
- const  userorders = db.collection("userorders")
+// app.get("/",async(req,res)=>{
+//  const   user = db.collection("user")
+//  const  proudect = db.collection("proudect")
+//  const   order = db.collection("order")
+//  const  userorders = db.collection("userorders")
 
- await user.deleteMany({})
- await proudect.deleteMany({})
- await order.deleteMany({})
- await userorders.deleteMany({})
+//  await user.deleteMany({})
+//  await proudect.deleteMany({})
+//  await order.deleteMany({})
+//  await userorders.deleteMany({})
 
 
-res.send("done")
-})
+// res.send("done")
+// })
 
 
 main(app);
