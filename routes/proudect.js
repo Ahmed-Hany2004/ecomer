@@ -92,7 +92,7 @@ router.get("/", async (req, res) => {
            
           if(min && max){
 
-            filter.price = { $gte: min, $lte: max };
+            filter["data.category"] = { $gte: min, $lte: max };
           }
            
 
