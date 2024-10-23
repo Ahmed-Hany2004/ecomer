@@ -218,7 +218,7 @@ router.post('/upload/:id', uploadnewpdf.single('file'), (req, res) => {
     uploadStream.on('finish', (file) => {
 
     proudect.updateOne({"_id":new ObjectId(req.params.id)},{$set:{
-      "data.pdf":file._id
+      "pdf":file._id
     }})
 
       res.json({ file });
