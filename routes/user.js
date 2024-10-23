@@ -164,7 +164,7 @@ router.post("/", async (req, res) => {
     x = await user.findOne({ "Email": req.body.Email })
 
     if (x) {
-      res.status(200).json("This email is already used")
+      res.status(400).json("This email is already used")
       return
     }
 

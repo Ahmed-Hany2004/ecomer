@@ -89,7 +89,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
     const order = db.collection("order")
-    const userorders =db.collection("userorders")
+    const userorders = db.collection("userorders")
 
     token = req.headers.token;
     req.user = null;
@@ -105,39 +105,40 @@ router.post("/", async (req, res) => {
 
     try {
 
-      
 
 
-            await order.insertOne({
-                "RFQ Date": Date.now(),
-                "Customer":new ObjectId(req.body.Customer),
-                "Status": req.body.status,
-                "OG Invoice": req.body.OG_Invoice,
-                "Customer PO": req.body.Customer_PO,
-                "Payment Date": req.body.Payment_Date,
-                "Payment AED": req.body.Payment_AED,
-                "Payment Reference": req.body.Payment_Reference,
-                "Shipping status": req.body.Shipping_status,
-                "DN": req.body.DN,
-                "Comments": req.body.Comments,
-                "cart": req.body.cart
+
+        await order.insertOne({
+            "RFQ Date": Date.now(),
+            "Customer": new ObjectId(req.body.Customer),
+            "Status": req.body.status,
+            "OG Invoice": req.body.OG_Invoice,
+            "Customer PO": req.body.Customer_PO,
+            "Payment Date": req.body.Payment_Date,
+            "Payment AED": req.body.Payment_AED,
+            "Payment Reference": req.body.Payment_Reference,
+            "Shipping status": req.body.Shipping_status,
+            "DN": req.body.DN,
+            "Comments": req.body.Comments,
+            "cart": req.body.cart,
+            "done": false
+        })
+
+        test = await userorders.findOne({ "Customer": new ObjectId(req.body.Customer) })
+
+        if (test) {
+            await userorders.updateOne({ "Customer": new ObjectId(req.body.Customer) }, { $set: { "lastOrder": Date.now() } })
+        }
+        else {
+            await userorders.insertOne({
+                "Customer": new ObjectId(req.body.Customer),
+                "lastOrder": Date.now(),
+                "Status": null,
             })
-
-        test = await userorders.findOne({"Customer":new ObjectId(req.body.Customer)})
-
-        if(test){
-         await userorders.updateOne({"Customer":new ObjectId(req.body.Customer)},{$set:{"lastOrder":Date.now()}})
-        }
-        else{
-         await userorders.insertOne({
-            "Customer":new ObjectId(req.body.Customer),
-           "lastOrder":Date.now(),
-           "Status": null,
-         })
         }
 
-            res.status(200).json({x:"order insertd",test:test})
-     
+        res.status(200).json({ x: "order insertd", test: test })
+
     }
     catch (err) {
         console.log("=========>" + err);
@@ -169,33 +170,32 @@ router.put("/data/:id", async (req, res) => {
 
         if (req.user.isAdmin) {
 
-if(req.body.status != 'Approved')
-    { 
-        await order.updateOne({ "_id": new ObjectId(req.params.id) }, {
-            $set: {
-                "Status": req.body.status,
-                "OG Invoice": req.body.OG_Invoice,
-                "Customer PO": req.body.Customer_PO,
-                "Payment Date": req.body.Payment_Date,
-                "Payment AED": req.body.Payment_AED,
-                "Payment Reference": req.body.Payment_Reference,
-                "Shipping status": req.body.Shipping_status,
-                "DN": req.body.DN,
-                "Comments": req.body.Comments,
+            if (req.body.status != 'Approved') {
+                await order.updateOne({ "_id": new ObjectId(req.params.id) }, {
+                    $set: {
+                        "Status": req.body.status,
+                        "OG Invoice": req.body.OG_Invoice,
+                        "Customer PO": req.body.Customer_PO,
+                        "Payment Date": req.body.Payment_Date,
+                        "Payment AED": req.body.Payment_AED,
+                        "Payment Reference": req.body.Payment_Reference,
+                        "Shipping status": req.body.Shipping_status,
+                        "DN": req.body.DN,
+                        "Comments": req.body.Comments,
+                    }
+
+                })
+
+                res.status(200).json("order updated")
+
             }
-           
-            })
 
-            res.status(200).json("order updated")        
 
+        }
+        else {
+            res.status(400).json("you are not allow ")
+        }
     }
-
-    
-    }
-    else {
-        res.status(400).json("you are not allow ")
-    }
-}
     catch (err) {
         console.log("=========>" + err);
         res.status(500).send("err in " + err)
@@ -205,8 +205,8 @@ if(req.body.status != 'Approved')
 
 
 
-router.put("/cart/:id",async(req,res)=>{
-    
+router.put("/cart/:id", async (req, res) => {
+
     const order = db.collection("order")
 
     token = req.headers.token;
@@ -220,19 +220,28 @@ router.put("/cart/:id",async(req,res)=>{
         return res.status(401).json({ message: "invalid token" })
     }
 
-    try{
+    try {
 
         if (req.user.isAdmin) {
-        
-        await order.updateOne({"_id":new ObjectId(req.params.id)},{$set:{
-            "cart":req.body.cart
-        }})
-        
-        res.status(200).json("cart updated")
+
+           x = await order.findOne({"_id": new ObjectId(req.params.id)})
+
+
+           if(x.done==true){
+          return res.status(400).json("this order done")
+           }
+
+            await order.updateOne({ "_id": new ObjectId(req.params.id) }, {
+                $set: {
+                    "cart": req.body.cart
+                }
+            })
+
+            res.status(200).json("cart updated")
         }
-    else {
-        return res.status(401).json({ message: "invalid token" })
-    }
+        else {
+            return res.status(401).json({ message: "invalid token" })
+        }
 
     }
     catch (err) {
@@ -243,62 +252,9 @@ router.put("/cart/:id",async(req,res)=>{
 })
 
 
-router.post("/user",async(req,res)=>{
+router.post("/user", async (req, res) => {
 
-    const userorders =db.collection("userorders")
-
-    token = req.headers.token;
-    req.user = null;
-
-    if (token) {
-
-        const data = jwt.verify(token, process.env.secritkey)
-        req.user = data;
-
-    } else {
-        return res.status(401).json({ message: "invalid token" })
-    }
-
-try{
-    
-    if (req.user.isAdmin) {
-
-        x = await userorders.aggregate([
-            {
-               $lookup:
-               {
-                  from: "user",
-                  localField: "Customer",
-                  foreignField: "_id",
-                  as: "usersorder"
-               },
-            },
-            { $sort : { lastOrder : -1 } }
-   
-         ]).toArray()
-
-         res.status(200).json({"data":x})
-
-    }
-    else {
-        res.status(400).json("you are not allow ")
-    }
-}
-catch (err) {
-    console.log("=========>" + err);
-    res.status(500).send("err in " + err)
-}
-
-})
-
-
-
-
-
-router.get("/user/:id",async(req,res)=>{
-
-
-    const order =db.collection("order")
+    const userorders = db.collection("userorders")
 
     token = req.headers.token;
     req.user = null;
@@ -312,63 +268,116 @@ router.get("/user/:id",async(req,res)=>{
         return res.status(401).json({ message: "invalid token" })
     }
 
-try{
-    
-    if (req.user.isAdmin) {
+    try {
 
-      data = await order.find({"Customer":new ObjectId(req.params.id)}).toArray()
+        if (req.user.isAdmin) {
 
+            x = await userorders.aggregate([
+                {
+                    $lookup:
+                    {
+                        from: "user",
+                        localField: "Customer",
+                        foreignField: "_id",
+                        as: "usersorder"
+                    },
+                },
+                { $sort: { lastOrder: -1 } }
 
-      res.status(200).json({"data":data})
+            ]).toArray()
 
+            res.status(200).json({ "data": x })
+
+        }
+        else {
+            res.status(400).json("you are not allow ")
+        }
     }
-    else{
-        res.status(400).json("you are not allow ")
+    catch (err) {
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
     }
 
-}
-catch (err) {
-    console.log("=========>" + err);
-    res.status(500).send("err in " + err)
-}
 })
 
 
 
-router.delete("/:id",async(req,res)=>{
+
+
+router.get("/user/:id", async (req, res) => {
+
+
+    const order = db.collection("order")
+
+    token = req.headers.token;
+    req.user = null;
+
+    if (token) {
+
+        const data = jwt.verify(token, process.env.secritkey)
+        req.user = data;
+
+    } else {
+        return res.status(401).json({ message: "invalid token" })
+    }
+
+    try {
+
+        if (req.user.isAdmin) {
+
+            data = await order.find({ "Customer": new ObjectId(req.params.id) }).toArray()
+
+
+            res.status(200).json({ "data": data })
+
+        }
+        else {
+            res.status(400).json("you are not allow ")
+        }
+
+    }
+    catch (err) {
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
+    }
+})
+
+
+
+router.delete("/:id", async (req, res) => {
 
     const order = db.collection("order")
 
 
-    token = req.headers.token||null;
+    token = req.headers.token || null;
     req.user = null;
-  
+
     if (token) {
-  
-      const data = jwt.verify(token, process.env.secritkey)
-      req.user = data;
-  
+
+        const data = jwt.verify(token, process.env.secritkey)
+        req.user = data;
+
     } else {
-      return res.status(401).json({ message: "invalid token" })
+        return res.status(401).json({ message: "invalid token" })
     }
-  
-    try{
-  
-      if (req.user.isAdmin) {
-  
-        await order.deleteOne({"_id":new ObjectId(req.params.id)})
-  
-        res.status(200).json("order deleted")
-      }
-      else {
-        res.status(400).json("you are not allow ")
-      }
-  
-  
+
+    try {
+
+        if (req.user.isAdmin) {
+
+            await order.deleteOne({ "_id": new ObjectId(req.params.id) })
+
+            res.status(200).json("order deleted")
+        }
+        else {
+            res.status(400).json("you are not allow ")
+        }
+
+
     }
-   catch (err) {
-      console.log("=========>" + err);
-      res.status(500).send("err in " + err)
+    catch (err) {
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
     }
 
 
@@ -379,83 +388,174 @@ router.delete("/:id",async(req,res)=>{
 router.post("/user/create", async (req, res) => {
     user = db.collection("user")
     userorders = db.collection("userorders")
-  
+
     try {
-  
-      test = await user.findOne({ "Email": req.body.Email })
-  
-      if (test) {
-        res.status(200).json("This email is already used")
-        return
-      }
-  
-  
-    x =  await user.insertOne({
-        "contactName": req.body.contactName,
-        "lastName": req.body.lastName,
-        "companyName":req.body.companyName,
-        "Email": req.body.Email,
-        "phoneNumber": req.body.phoneNumber,
-        "country": req.body.country,
-        "isAdmin":false
-      })
 
-   
-      
-      
-      
-      v= await userorders.findOne({"Customer":new ObjectId(x.insertedId)})
+        test = await user.findOne({ "Email": req.body.Email })
 
-      if(v){
-       await userorders.updateOne({"Customer":new ObjectId(x.insertedId)},{$set:{"lastOrder":Date.now()}})
-      }
-      else{
-       await userorders.insertOne({
-          "Customer":new ObjectId(x.insertedId),
-         "lastOrder":Date.now(),
-         "Status": null,
-       })
-      }
-  
-      res.status(200).json( {data :x })
-  
-  
+        if (test) {
+            res.status(200).json("This email is already used")
+            return
+        }
+
+
+        x = await user.insertOne({
+            "contactName": req.body.contactName,
+            "lastName": req.body.lastName,
+            "companyName": req.body.companyName,
+            "Email": req.body.Email,
+            "phoneNumber": req.body.phoneNumber,
+            "country": req.body.country,
+            "isAdmin": false
+        })
+
+
+
+
+
+        v = await userorders.findOne({ "Customer": new ObjectId(x.insertedId) })
+
+        if (v) {
+            await userorders.updateOne({ "Customer": new ObjectId(x.insertedId) }, { $set: { "lastOrder": Date.now() } })
+        }
+        else {
+            await userorders.insertOne({
+                "Customer": new ObjectId(x.insertedId),
+                "lastOrder": Date.now(),
+                "Status": null,
+            })
+        }
+
+        res.status(200).json({ data: x })
+
+
     } catch (err) {
-      console.log("=========>" + err);
-      res.status(500).send("err in " + err)
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
     }
-  })
+})
 
 
-  router.post("/update/status/:id",async(req,res)=>{
+router.post("/update/status/:id", async (req, res) => {
 
     userorders = db.collection("userorders")
 
-    x = await userorders.findOne({"_id":new ObjectId(req.params.id)})
+    try {
+
+        x = await userorders.findOne({ "_id": new ObjectId(req.params.id) })
 
 
-    if(!x){
-    
-        return  res.status(400).json("cant find this user")
+        if (!x) {
+
+            return res.status(400).json("cant find this user")
+        }
+
+        await userorders.updateOne({ "_id": new ObjectId(req.params.id) }, { $set: { "Status": req.body.Status } })
+
+
+        res.status(200).json("Status updated")
     }
-    
-    await userorders.updateOne({"_id":new ObjectId(req.params.id)},{$set:{"Status":req.body.Status}})
+    catch (err) {
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
+    }
 
-    
-  res.status(200).json("Status updated")
-
-  })
-
+})
 
 
-  router.delete("/userorders/:id",async(req,res)=>{
+
+router.get("/done/order/:id", async (req, res) => {
+
+    const order = db.collection("order")
+    proudect = db.collection("proudect");
+
+    try {
+
+        cart_ids = []
+        bsd = []
+        main_order = await order.findOne({ "_id": new ObjectId(req.params.id) })
+
+
+        if (main_order.done == true) {
+            return res.status(400).json("this order done")
+        }
+
+
+        if (main_order.cart.length == 0) {
+            return res.status(400).json("this cart is empty")
+        }
+
+
+        for (i = 0; i < main_order.cart.length; i++) {
+
+            cart_ids.push(new ObjectId(main_order.cart[i]._id))
+
+        }
+
+
+
+        all_proudect = await proudect.find({ "_id": { $in: cart_ids } }).toArray()
+
+
+        for (i = 0; i < main_order.cart.length; i++) {
+
+            for (t = 0; t < all_proudect.length; t++) {
+
+                if (main_order.cart[i]._id == all_proudect[t]._id) {
+
+                    if (main_order.cart[i].Quantity > all_proudect[t].data.instock) {
+
+                        
+                        
+
+                        return res.status(400).json("err in Quantity in this proudct" + all_proudect[t].data.product_name)
+
+                    }
+                    else {
+                        bsd.push({
+                            "updateOne": {
+                                "filter": { "_id": new ObjectId(all_proudect[t]._id) },
+                                "update": { "$inc": { "data.instock": -main_order.cart[i].Quantity } }
+                            }
+                        })
+
+                    }
+
+
+                    break
+                }
+
+            }
+
+        }
+
+
+        await order.updateOne({ "_id": new ObjectId(req.params.id) }, {$set : { "done": true } })
+
+        await proudect.bulkWrite(bsd);
+
+
+
+        res.status(200).json(all_proudect)
+
+    }
+    catch (err) {
+        console.log("=========>" + err);
+        res.status(500).send("err in " + err)
+    }
+
+})
+
+
+
+router.delete("/userorders/:id", async (req, res) => {
 
     userorders = db.collection("userorders")
 
-   userorders.deleteOne({"_id":new ObjectId(req.params.id)})
+    userorders.deleteOne({ "_id": new ObjectId(req.params.id) })
 
-   res.status(200).json("user deleted")
+    res.status(200).json("user deleted")
 
-  })
+})
 
 module.exports = router;
